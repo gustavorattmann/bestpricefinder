@@ -35,6 +35,86 @@ def format_to_real(value):
     real, cents = format(value, ',.2f').split('.')
     return f'R$ {real.replace(',', '.')},{cents}'
 
+
+def format_date_to_brazil(date):
+    convertDateToUtc = datetime.fromtimestamp(date, tz=None)
+    dateFormatted = convertDateToUtc.strftime('%d/%m/%Y %H:%M:%S')
+    return dateFormatted
+
+
+def handle_object(dataOfObject):
+    objectPreparation = {}
+
+    if not dataOfObject['code'] is None:
+        objectPreparation['cd_product'] = int(dataOfObject['code'])
+        objectPreparation['ds_product_link'] = f'https://www.kabum.com.br/produto/{product['code']}'
+
+    if not dataOfObject['name'] is None:
+        objectPreparation['nm_product'] = dataOfObject['name']
+
+    if not dataOfObject['manufacturer'] is None:
+        if not dataOfObject['manufacturer']['name'] is None:
+            objectPreparation['nm_brand'] = dataOfObject['manufacturer']['name']
+
+    if not dataOfObject['thumbnail'] is None:
+        objectPreparation['ds_img_link'] = dataOfObject['thumbnail']
+
+    if not dataOfObject['category'] is None:
+        objectPreparation['ds_category'] = dataOfObject['category']
+
+    if not dataOfObject['warranty'] is None:
+        objectPreparation['ds_warranty'] = dataOfObject['warranty']
+
+    if not dataOfObject['rating'] is None:
+        objectPreparation['nr_rating'] = int(dataOfObject['rating'])
+
+    if not dataOfObject['ratingCount'] is None:
+        objectPreparation['qt_rating'] = int(dataOfObject['ratingCount'])
+
+    if not dataOfObject['offer'] is None:
+        if not dataOfObject['offer']['quantityAvailable'] is None:
+            objectPreparation['qt_product'] = int(dataOfObject['offer']['quantityAvailable'])
+
+        if not dataOfObject['offer']['name'] is None:
+            objectPreparation['nm_offer'] = dataOfObject['offer']['name']
+
+        if not dataOfObject['offer']['startsAt'] is None:
+            objectPreparation['dt_offer_start'] = format_date_to_brazil(dataOfObject['offer']['startsAt'])
+
+        if not dataOfObject['offer']['endsAt'] is None:
+            objectPreparation['dt_offer_end'] = format_date_to_brazil(dataOfObject['offer']['endsAt'])
+
+    if not dataOfObject['price'] is None:
+        objectPreparation['qt_price'] = format_to_real(dataOfObject['price'])
+
+    if not dataOfObject['priceWithDiscount'] is None:
+        objectPreparation['qt_price_discounted'] = format_to_real(dataOfObject['priceWithDiscount'])
+
+    if not dataOfObject['discountPercentage'] is None:
+        objectPreparation['qt_discount_percentage'] = f'{dataOfObject['discountPercentage']}%'
+
+    if not dataOfObject['ufsFlash'] is None:
+        objectPreparation['st_uf_flash_delivery'] = dataOfObject['ufsFlash']
+
+    if not dataOfObject['flags'] is None:
+        if not dataOfObject['flags']['isMarketplace'] is None:
+            objectPreparation['is_marketplace'] = dataOfObject['flags']['isMarketplace']
+
+        if not dataOfObject['flags']['isOpenbox'] is None:
+            objectPreparation['is_openbox'] = dataOfObject['flags']['isOpenbox']
+
+        if not dataOfObject['flags']['isFreeShipping'] is None:
+            objectPreparation['is_free_shipping'] = dataOfObject['flags']['isFreeShipping']
+
+        if not dataOfObject['flags']['isPrime'] is None:
+            objectPreparation['is_prime'] = dataOfObject['flags']['isPrime']
+
+        if not dataOfObject['flags']['isFreeShippingPrime'] is None:
+            objectPreparation['is_free_shipping_prime'] = dataOfObject['flags']['isFreeShippingPrime']
+
+    return objectPreparation
+
+
 productFormatted = product_name_fix(dataForSearch['product'])
 
 url = f'https://www.kabum.com.br/busca/{productFormatted}?page_number=1&page_size=100&sort=price'
@@ -55,78 +135,14 @@ try:
 
     for product in products:
         if validate_product_find(product):
-            print(json.dumps(product, indent=4))
+            productObject = handle_object(product)
 
-            productObject = {}
+            if productObject:
+                resultFinal.append(productObject)
 
-            if not product['code'] is None:
-                productObject['cd_product'] = int(product['code'])
-                productObject['ds_product_link'] = f'https://www.kabum.com.br/produto/{product['code']}'
-
-            if not product['name'] is None:
-                productObject['nm_product'] = product['name']
-
-            if not product['manufacturer'] is None:
-                if not product['manufacturer']['name'] is None:
-                    productObject['nm_brand'] = product['manufacturer']['name']
-
-            if not product['thumbnail'] is None:
-                productObject['ds_img_link'] = product['thumbnail']
-
-            if not product['category'] is None:
-                productObject['ds_category'] = product['category']
-
-            if not product['warranty'] is None:
-                productObject['ds_warranty'] = product['warranty']
-
-            if not product['rating'] is None:
-                productObject['nr_rating'] = int(product['rating'])
-
-            if not product['ratingCount'] is None:
-                productObject['qt_rating'] = int(product['ratingCount'])
-
-            if not product['offer'] is None:
-                if not product['offer']['quantityAvailable'] is None:
-                    productObject['qt_product'] = int(product['offer']['quantityAvailable'])
-
-                if not product['offer']['name'] is None:
-                    productObject['nm_offer'] = product['offer']['name']
-
-                if not product['offer']['startsAt'] is None:
-                    productObject['dt_offer_start'] = f'{datetime.fromtimestamp(product['offer']['startsAt'], tz = None)}'
-
-                if not product['offer']['endsAt'] is None:
-                    productObject['dt_offer_end'] = f'{datetime.fromtimestamp(product['offer']['endsAt'], tz = None)}'
-
-            if not product['price'] is None:
-                productObject['qt_price'] = format_to_real(product['price'])
-
-            if not product['priceWithDiscount'] is None:
-                productObject['qt_price_discounted'] = format_to_real(product['priceWithDiscount'])
-
-            if not product['discountPercentage'] is None:
-                productObject['qt_discount_percentage'] = f'{product['discountPercentage']}%'
-
-            if not product['ufsFlash'] is None:
-                productObject['st_uf_flash_delivery'] = product['ufsFlash']
-
-            if not product['flags'] is None:
-                if not product['flags']['isMarketplace'] is None:
-                    productObject['is_marketplace'] = product['flags']['isMarketplace']
-
-                if not product['flags']['isOpenbox'] is None:
-                    productObject['is_openbox'] = product['flags']['isOpenbox']
-
-                if not product['flags']['isFreeShipping'] is None:
-                    productObject['is_free_shipping'] = product['flags']['isFreeShipping']
-
-                if not product['flags']['isPrime'] is None:
-                    productObject['is_prime'] = product['flags']['isPrime']
-
-                if not product['flags']['isFreeShippingPrime'] is None:
-                    productObject['is_free_shipping_prime'] = product['flags']['isFreeShippingPrime']
-
-            resultFinal.append(productObject)
+                print(json.dumps(resultFinal, ensure_ascii=False, indent=4))
+            else:
+                print('Nenhum resultado encontrado!')
 except requests.exceptions.HTTPError as err:
     print(f'HTTP error occurred: {err}')
 except Exception as e:
