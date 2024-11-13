@@ -1,27 +1,28 @@
-from inquirer import errors
+from inquirer.errors import ValidationError
+from inquirer.themes import BlueComposure
 import inquirer
 
 
 def validate_product(answer, current):
     if not current:
-        raise errors.ValidationError('', reason='É obrigatório informar o produto desejado!')
+        raise ValidationError('', reason='É obrigatório informar o produto desejado!')
 
     return True
 
 
 def validate_installment(answer, current):
     if not current:
-        raise errors.ValidationError('', reason='É obrigatório informar a quantidade de parcela(s)!')
+        raise ValidationError('', reason='É obrigatório informar a quantidade de parcela(s)!')
     elif not current.isnumeric():
-        raise errors.ValidationError('', reason='Inserir apenas número(s)!')
+        raise ValidationError('', reason='Inserir apenas número(s)!')
     elif not int(current) > 1 or not int(current) < 13:
-        raise errors.ValidationError('', reason='Informar a quantidade de parcelas entre 1 e 12!')
+        raise ValidationError('', reason='Informar a quantidade de parcelas entre 1 e 12!')
 
     return True
 
 
 listFilter = [
-    inquirer.Text('product', message='Qual produto deseja procurar?',validate=validate_product),
+    inquirer.Text('product', 'Qual produto deseja procurar?',validate=validate_product),
     inquirer.Text('productBrand', 'Qual a marca do produto deseja procurar?'),
     inquirer.Text('maxPrice', 'Qual o valor máximo aceitável (R$)?'),
     inquirer.List(
@@ -44,4 +45,4 @@ listFilter = [
     ),
 ]
 
-dataForSearch = inquirer.prompt(listFilter)
+dataForSearch = inquirer.prompt(listFilter, theme=BlueComposure())
