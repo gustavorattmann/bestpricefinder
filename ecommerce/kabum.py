@@ -19,8 +19,8 @@ def product_name_fix(productName):
     return '-'.join(productNameNormalize.split())
 
 
-def validate_product_find(product):
-    if productFormatted in product['friendlyName']:
+def validate_product_find(productObject):
+    if productFormatted in productObject['friendlyName'] and productObject['available'] and productObject['sellerName'] == 'KaBuM!':
         return True
     # elif dataForSearch['productBrand'] and dataForSearch['productBrand'] in product['manufacturer']['name']:
     #    return True
@@ -45,11 +45,16 @@ try:
     products = recoveryProducts['props']['pageProps']['data']['catalogServer']['data']
 
     for product in products:
+        print(json.dumps(product, indent=4))
         if validate_product_find(product):
-            code = product['code']
-            print(f'Código: {code}\n')
-            name = product['name']
-            print(f'Nome: {name}\n')
+            json.dumps({
+                'cd_product': int(product['code']),
+                'ds_product': product['name'],
+                'ds_img_link': product['thumbnail'],
+                'ds_link': f'https://www.kabum.com.br/produto/{product['code']}',
+                'ds_brand': product['manufacturer']['name'],
+                #'ds_price':
+            })
 except requests.exceptions.HTTPError as err:
     print(f'HTTP error occurred: {err}')
 except Exception as e:
