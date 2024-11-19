@@ -1,17 +1,5 @@
-import json
-import os
-import sys
-import requests
 from datetime import datetime
-from bs4 import BeautifulSoup
 from unidecode import unidecode
-
-currentDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.dirname(currentDir)
-
-sys.path.append(rootDir)
-
-from questionary import dataForSearch
 
 
 def product_name_fix(productName):
@@ -20,11 +8,11 @@ def product_name_fix(productName):
     return '-'.join(productNameNormalize.split())
 
 
-def validate_product_find(productListed):
+def validate_product_find(findedProduct, productListed):
     if (
-        productFormatted in productListed['friendlyName']
-        and bool(productListed['available'])
-        and productListed['sellerName'] == 'KaBuM!'
+            findedProduct in productListed['friendlyName']
+            and bool(productListed['available'])
+            and productListed['sellerName'] == 'KaBuM!'
     ):
         return True
 
@@ -47,7 +35,7 @@ def handle_object(dataOfObject):
 
     if not dataOfObject['code'] is None:
         objectPreparation['cd_product'] = int(dataOfObject['code'])
-        objectPreparation['ds_product_link'] = f'https://www.kabum.com.br/produto/{product['code']}'
+        objectPreparation['ds_product_link'] = f'https://www.kabum.com.br/produto/{dataOfObject['code']}'
 
     if not dataOfObject['name'] is None:
         objectPreparation['nm_product'] = dataOfObject['name']
@@ -113,37 +101,3 @@ def handle_object(dataOfObject):
             objectPreparation['is_free_shipping_prime'] = dataOfObject['flags']['isFreeShippingPrime']
 
     return objectPreparation
-
-
-productFormatted = product_name_fix(dataForSearch['product'])
-
-url = f'https://www.kabum.com.br/busca/{productFormatted}?page_number=1&page_size=100&sort=price'
-headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0'}
-
-try:
-    response = requests.get(url, headers=headers)
-
-    response.raise_for_status()
-
-    soup = BeautifulSoup(response.content, 'html.parser')
-
-    recoveryProducts = json.loads(soup.find('script', attrs={'id': '__NEXT_DATA__'}).text)
-
-    products = recoveryProducts['props']['pageProps']['data']['catalogServer']['data']
-
-    resultFinal = []
-
-    for product in products:
-        if validate_product_find(product):
-            productObject = handle_object(product)
-
-            if productObject:
-                resultFinal.append(productObject)
-
-                print(json.dumps(resultFinal, ensure_ascii=False, indent=4))
-            else:
-                print('Nenhum resultado encontrado!')
-except requests.exceptions.HTTPError as err:
-    print(f'HTTP error occurred: {err}')
-except Exception as e:
-    print(f'Error occurred while parsing HTML: {e}')

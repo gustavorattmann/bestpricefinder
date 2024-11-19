@@ -1,6 +1,7 @@
+import brazilcep
+import inquirer
 from inquirer.errors import ValidationError
 from inquirer.themes import BlueComposure
-import inquirer
 
 
 def validate_product(answer, current):
@@ -21,8 +22,20 @@ def validate_installment(answer, current):
     return True
 
 
+def validate_cep(answer, current):
+    if not current:
+        raise ValidationError('', reason='É obrigatório informar um CEP!')
+    else:
+        address = brazilcep.get_address_from_cep(current)
+
+        if not address:
+            raise ValidationError('', reason='Informe um CEP válido!')
+
+    return True
+
+
 listFilter = [
-    inquirer.Text('product', 'Qual produto deseja procurar?',validate=validate_product),
+    inquirer.Text('product', 'Qual produto deseja procurar?', validate=validate_product),
     inquirer.Text('productBrand', 'Qual a marca do produto deseja procurar?'),
     inquirer.Text('maxPrice', 'Qual o valor máximo aceitável (R$)?'),
     inquirer.List(
@@ -36,6 +49,18 @@ listFilter = [
         message='Deseja parcelar em até quantas vezes (Entre 1 e 12)?',
         ignore=lambda x: x['typePayment'] != 'Crédito',
         validate=validate_installment
+    ),
+    inquirer.List(
+        'isPostalCode',
+        message='Deseja verificar os fretes disponíveis para o seu endereço?',
+        choices=['Sim', 'Não'],
+        default='Sim'
+    ),
+    inquirer.Text(
+        'zipCode',
+        'Informe seu CEP para verificarmos os fretes',
+        ignore=lambda x: x['isPostalCode'] == 'Não',
+        validate=validate_cep
     ),
     inquirer.List(
         'isShippingFree',
